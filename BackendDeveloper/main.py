@@ -47,13 +47,18 @@ Base.metadata.create_all(bind=engine)
 # Serve static avatar files
 app.mount("/static", StaticFiles(directory="BackendDeveloper/static"), name="static")
 
-ALLOWED_AVATAR_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
-MIN_PASSWORD_LENGTH = 6
+ALLOWED_AVATAR_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+}  # (not sure if it works for all - will test later)
+MIN_PASSWORD_LENGTH = 6  # can make it more strict later
 
 
-# ---------------------------
+# ===========================
 # AUTH ROUTES
-# ---------------------------
+# ===========================
 
 
 @app.post("/register")
@@ -91,9 +96,9 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     return success(AuthResponse(access_token=token).dict())
 
 
-# ---------------------------
+# ===========================
 # AVATAR ROUTES
-# ---------------------------
+# ===========================
 
 
 @app.post("/avatar")
@@ -120,6 +125,8 @@ async def upload_avatar(
     db.commit()
 
     # Notify user WebSocket(s)
+    # this was also not happening for several reasons
+    # implemented await and then it worked
     await ws_manager.send_user(user.id, "Avatar updated")
 
     return success(AvatarResponse(avatar_url=avatar_url).dict())
@@ -131,9 +138,9 @@ def get_my_avatar(user: User = Depends(get_current_user)):
     return success(AvatarResponse(avatar_url=url).dict())
 
 
-# ---------------------------
+# ===========================
 # WEBSOCKET ENDPOINT
-# ---------------------------
+# ===========================
 
 
 @app.websocket("/ws")
@@ -149,16 +156,16 @@ async def websocket_endpoint(ws: WebSocket, token: str):
 
     try:
         while True:
-            await ws.receive_text()  # keep alive
+            await ws.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
         await ws_manager.disconnect(user_id, ws)
 
 
-# ---------------------------
+# ===========================
 # DELETE USER
-# ---------------------------
+# ===========================
 
 
 @app.delete("/user")
@@ -170,7 +177,9 @@ async def delete_user(
     db.delete(user)
     db.commit()
 
-    # Close their active WebSocket(s)
+    # Close the active WebSocket(s)
+    # Had the same issue in @app.post ("/avatar")
+    # using await fixed the probelm
     await ws_manager.send_user(user.id, "User deleted")
 
     return success(DeleteResponse(message="User deleted").dict())
