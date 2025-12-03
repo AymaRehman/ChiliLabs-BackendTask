@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>WebSocket Avatar Test</h2>
+
+<input id="token" placeholder="Enter JWT token" style="width:300px">
+<button onclick="connectWS()">Connect</button>
+<br><br>
+
+<!-- Avatar -->
+<img id="avatar" src="" width="150" height="150" style="border:1px solid #444">
+
+<pre id="log"></pre>
+
+<script>
+function log(msg) {
+    const pre = document.getElementById("log");
+    const time = new Date().toLocaleTimeString();
+    pre.textContent += `[${time}] ${msg}\n`;
+}
+
+let ws;
+let token;
+
+/* ============================
+   GET /me/avatar
+============================*/
+async function getAvatarUrl() {
+    try {
+        const res = await fetch("http://127.0.0.1:8000/me/avatar", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (!res.ok) {
+            log("Failed to get avatar endpoint: " + res.status);
+            return null;
+        }
+
+        const data = await res.json();
+
+        if (data?.data?.avatar_url) {
+            return "http://127.0.0.1:8000" + data.data.avatar_url;
+        }
+    } catch (err) {
+        log("Fetch error: " + err);
+    }
+    return null;
+}
+
+/* ============================
+   Refresh avatar immediately
+============================*/
+async function refreshAvatar() {
+    const url = await getAvatarUrl();
+    if (url) {
+        const finalUrl = url + "?t=" + Date.now();
+        document.getElementById("avatar").src = finalUrl;
+        log("Avatar refreshed: " + finalUrl);
+    } else {
+        log("Failed to load avatar.");
+    }
+}
+
+/* ============================
+   Connect WebSocket
+============================*/
+async function connectWS() {
+    token = document.getElementById("token").value.trim();
+
+    if (!token) {
+        alert("Please paste a JWT token!");
+        return;
+    }
+
+    // Refresh avatar instantly
+    await refreshAvatar();
+
+    ws = new WebSocket("ws://127.0.0.1:8000/ws?token=" + token);
+
+    ws.onopen = () => log("CONNECTED");
+
+    ws.onmessage = async e => {
+        log("WS MESSAGE: " + e.data);
+
+        if (e.data.includes("Avatar updated")) {
+            log("Triggering immediate avatar refresh...");
+            await refreshAvatar();
+        }
+    };
+
+    ws.onclose = () => log("DISCONNECTED");
+}
+</script>
+</body>
+</html>
