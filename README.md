@@ -18,3 +18,62 @@ A small backend service built for a pre-internship at Chili Labs, designed to ha
 - WebSockets
 - Docker / Docker Compose
 - Pytest (unit + integration tests)
+
+### How to Run
+
+```
+docker compose up --build
+```
+
+The server runs at:
+
+```
+http://127.0.0.1:8000
+```
+
+Find the interactive API docs:
+```
+http://127.0.0.1:8000/docs
+```
+
+Real-Time Websocket Tests:
+```
+websocat ws://127.0.0.1:8000/ws?token=<JWT_TOKEN>
+```
+
+### Project Structure
+
+
+BackendDeveloper/
+├── .gitignore
+├── BackendDeveloper.db
+├── Dockerfile
+├── docker-compose.yml
+├── README.md
+├── requirements.txt
+│
+├── venv/
+│
+├── .vscode/
+│
+├── static/
+│
+├── tests/
+│   ├── __pycache__/
+│   ├── test_auth.py
+│   └── test_integration.py
+│
+├── __pycache__/
+├── .pytest_cache/
+│
+├── __init__.py
+├── apidoc.apib
+├── auth.py
+├── database.py
+├── jsend.py
+├── main.py
+├── models.py
+├── schemas.py
+├── utils.py
+├── ws_manager.py
+└── ws_test.html
