@@ -1,6 +1,6 @@
 ## Chili Labs – FastAPI Avatar Upload Service
 
-A small backend service built for a pre-internship at Chili Labs, designed to handle user authentication and real-time avatar uploads via WebSockets. 
+A small backend service built for a pre-internship test at Chili Labs, designed to handle user authentication and real-time avatar uploads via WebSockets. 
   
 ### ✨ What this project does
   
@@ -43,7 +43,7 @@ websocat ws://127.0.0.1:8000/ws?token=<JWT_TOKEN>
 
 ### Project Structure
 
-
+```
 BackendDeveloper/
 ├── .gitignore
 ├── BackendDeveloper.db
@@ -77,3 +77,4 @@ BackendDeveloper/
 ├── utils.py
 ├── ws_manager.py
 └── ws_test.html
+```
