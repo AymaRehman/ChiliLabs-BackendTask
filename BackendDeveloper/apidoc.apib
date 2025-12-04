@@ -1,0 +1,249 @@
+FORMAT: 1A
+HOST: http://127.0.0.1:8000
+
+# BackendDeveloper API
+
+A simple RESTful API with JWT authentication, avatar upload, WebSocket notifications, and user management. 
+All responses follow **JSend** specification.
+
+---
+
+# Group: User Authentication
+
+## Register a User [POST /register]
+
+Register a new user with an identifier (nickname, email, phone) and password.
+
++ Request (application/json)
+    + Body
+        ```json
+        {
+            "identifier": "johnny",
+            "password": "secret123"
+        }
+        ```
+
++ Response 200 (application/json)
+    + Body
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "access_token": "<JWT_TOKEN>",
+                "token_type": "bearer"
+            }
+        }
+        ```
+
++ Response 400 (application/json) – Password too short
+    + Body
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "password": "Password must be at least 6 characters"
+            }
+        }
+        ```
+
++ Response 400 (application/json) – Identifier taken
+    + Body
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "identifier": "Already taken"
+            }
+        }
+        ```
+
+---
+
+## Login [POST /login]
+
+Login with identifier and password. Returns JWT token.
+
++ Request (application/json)
+    + Body
+        ```json
+        {
+            "identifier": "johnny",
+            "password": "secret123"
+        }
+        ```
+
++ Response 200 (application/json)
+    + Body
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "access_token": "<JWT_TOKEN>",
+                "token_type": "bearer"
+            }
+        }
+        ```
+
++ Response 401 (application/json) – Invalid credentials
+    + Body
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "credentials": "Invalid identifier or password"
+            }
+        }
+        ```
+
+---
+
+# Group: Avatar Management
+
+## Get Current User Avatar [GET /me/avatar]
+
+Get the current user's avatar URL. Requires JWT token.
+
++ Request (application/json)
+    + Headers
+        ```
+        Authorization: Bearer <JWT_TOKEN>
+        ```
+
++ Response 200 (application/json)
+    + Body
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "avatar_url": "/static/avatars/default.png"
+            }
+        }
+        ```
+
+---
+
+## Upload Avatar [POST /avatar]
+
+Upload or replace the user's avatar. Supports PNG, JPG, JPEG, WEBP. Requires JWT token.
+
++ Request (multipart/form-data)
+    + Headers
+        ```
+        Authorization: Bearer <JWT_TOKEN>
+        ```
+    + Body
+        ```
+        file=@avatar.png
+        ```
+
++ Response 200 (application/json)
+    + Body
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "avatar_url": "/static/avatars/1.png"
+            }
+        }
+        ```
+
++ Response 400 (application/json) – Invalid file type
+    + Body
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "file": "Invalid file type. Allowed: .png, .jpg, .jpeg, .webp"
+            }
+        }
+        ```
+
+---
+
+# Group: User Management
+
+## Delete Current User [DELETE /user]
+
+Deletes the current user and their avatar. All active WebSocket connections will close. Requires JWT token.
+
++ Request (application/json)
+    + Headers
+        ```
+        Authorization: Bearer <JWT_TOKEN>
+        ```
+
++ Response 200 (application/json)
+    + Body
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "message": "User deleted"
+            }
+        }
+        ```
+
+---
+
+# Group: WebSocket Notifications
+
+## WebSocket Endpoint [ws /ws?token=<JWT_TOKEN>]
+
+After connecting, the client will receive messages when the user's avatar is updated.
+
++ URL Parameters
+    + token: JWT access token
+
++ Example Connection
+    ws://127.0.0.1:8000/ws?token=<JWT_TOKEN>
+
++ Messages Sent to Client
+
+
++ Behavior
+- When the user uploads a new avatar, all connected WebSocket clients for that user receive the `"Avatar updated"` message.
+- Closing the WebSocket connection removes the client from the active connections list.
+- After user deletion, all sockets are automatically closed.
+
+---
+
+# Group: Authentication Notes
+
+- **JWT token** is required for `/avatar`, `/me/avatar`, `/user`, and WebSocket connections.
+- Tokens expire after **60 minutes**.
+- Responses always follow **JSend format**:
+    - `status`: `"success"`, `"fail"`, or `"error"`
+    - `data`: Object with relevant data for success/fail
+    - `message` and optional `code` for errors
+
+---
+
+# Group: Allowed Identifier Formats
+
+- Nickname (any string)
+- Email (e.g., user@example.com)
+- Phone number (e.g., +1234567890)
+
+No validation is enforced; any string is accepted as identifier.
+
+---
+
+# Group: Allowed Avatar Formats
+
+- `.png`, `.jpg`, `.jpeg`, `.webp`
+
+Uploading other file types returns `400 Bad Request`.
+
+---
+
+# Group: Error Responses
+
+- Invalid or expired token → `401 Unauthorized`
+- User not found → `401 Unauthorized`
+- Invalid file type → `400 Bad Request`
+- Password too short → `400 Bad Request`
+- Identifier already exists → `400 Bad Request`
+
+---
+
+# End of API Documentation
